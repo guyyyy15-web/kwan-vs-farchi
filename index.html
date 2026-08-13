@@ -2,7 +2,11 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1a2e">
 <title>KWAN vs FARCHI - Ultra Street Rooftop Fighter 2000</title>
 <style>
   @import url('');
@@ -53,12 +57,161 @@
     font-family: monospace; font-weight: bold; border-bottom: 2px solid #b39a2f;
   }
   .footer { font-size: 11px; color: #888; margin: 12px 0 20px; text-align: center; }
+
+  /* ============================================================
+     שליטה במגע — מובייל וטאבלט
+     כל השכבה יושבת בדיוק על הקנבס ומודדת את עצמה ביחידות cqh
+     (אחוז מגובה הקנבס), כדי שהכפתורים יגדלו וייקטנו יחד איתו.
+     ============================================================ */
+  #wrap { position: relative; }
+  #touch {
+    position: absolute; inset: 0; z-index: 5;
+    display: none; pointer-events: none;
+    container-type: size;
+    direction: ltr; touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    font-family: Impact, "Arial Black", sans-serif;
+  }
+  body.touch #touch { display: block; }
+
+  /* המסך כולו הופך למשחק — בלי גלילה, בלי כותרות, בלי טבלת מקשים */
+  body.touch {
+    padding: 0; height: 100vh; height: 100dvh;
+    overflow: hidden; justify-content: center;
+    overscroll-behavior: none; touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+  }
+  body.touch h1, body.touch .keys, body.touch .footer { display: none; }
+  body.touch #wrap {
+    border-width: 3px; box-shadow: 0 0 0 2px #ff2d55;
+    width:  min(100vw, calc(100dvh * 960 / 540));
+    height: min(100dvh, calc(100vw * 540 / 960));
+  }
+  body.touch canvas { width: 100%; height: 100%; cursor: default; }
+
+  /* ---- ג׳ויסטיק ---- */
+  .tpad {
+    position: absolute; pointer-events: auto; touch-action: none;
+    width: 30cqh; height: 30cqh; border-radius: 50%;
+    border: 0.6cqh solid rgba(255,222,89,.5);
+    background: radial-gradient(circle, rgba(15,52,96,.55) 0%, rgba(15,52,96,.2) 72%);
+    opacity: .85;
+  }
+  .tpad .tnub {
+    position: absolute; left: 50%; top: 50%;
+    width: 13cqh; height: 13cqh; margin: -6.5cqh 0 0 -6.5cqh;
+    border-radius: 50%; background: rgba(255,222,89,.55);
+    border: 0.5cqh solid rgba(0,0,0,.7); pointer-events: none;
+    transition: transform .05s linear;
+  }
+  .tpad.on { opacity: 1; border-color: #ffde59; }
+  .tpad .tar {
+    position: absolute; color: #ffde59; opacity: .55; pointer-events: none;
+    font-size: 5cqh; line-height: 1; transform: translate(-50%, -50%);
+  }
+  .tpad .tar.n { left: 50%; top: 11%; }
+  .tpad .tar.s { left: 50%; top: 89%; }
+  .tpad .tar.w { left: 11%; top: 50%; }
+  .tpad .tar.e { left: 89%; top: 50%; }
+
+  /* ---- כפתורים ---- */
+  .tbtn {
+    position: absolute; pointer-events: auto; touch-action: none;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; border: 0.55cqh solid rgba(0,0,0,.6);
+    background: rgba(15,52,96,.6); color: #fff;
+    font-size: 3.1cqh; text-align: center; line-height: 1.05;
+    text-shadow: 1px 1px 0 #000; opacity: .9; direction: rtl;
+  }
+  .tbtn.on { transform: scale(.9); filter: brightness(1.6); opacity: 1; }
+  .tbtn.punch   { background: rgba(255,45,85,.62);  border-color: #7d0f26; }
+  .tbtn.kick    { background: rgba(255,143,31,.62); border-color: #7d4406; }
+  .tbtn.block   { background: rgba(127,255,212,.5); border-color: #146853; color: #04241d; text-shadow: none; }
+  .tbtn.special { background: rgba(120,120,140,.5); border-color: #2b2b38; opacity: .55; }
+  .tbtn.special.ready {
+    background: rgba(255,222,89,.75); border-color: #7d6a12; color: #2a2200;
+    text-shadow: none; opacity: 1; animation: tglow .5s steps(2) infinite;
+  }
+  @keyframes tglow { 50% { box-shadow: 0 0 2cqh 0.8cqh rgba(255,222,89,.8); } }
+
+  /* אשכול ארבעת כפתורי הפעולה */
+  .tacts { position: absolute; width: 30cqh; height: 30cqh; pointer-events: none; }
+  .tacts .tbtn { width: 13.5cqh; height: 13.5cqh; }
+  .tacts .a-block   { left: 0; top: 0; }
+  .tacts .a-special { right: 0; top: 0; }
+  .tacts .a-punch   { left: 0; bottom: 0; }
+  .tacts .a-kick    { right: 0; bottom: 0; }
+
+  /* ---- פריסה: שחקן אחד ---- */
+  .tpad.p1  { left: 3cqh;  bottom: 3cqh; }
+  .tacts.p1 { right: 3cqh; bottom: 3cqh; }
+  .tpad.p2  { right: 3cqh; bottom: 3cqh; }
+  .tacts.p2 { right: 3cqh; bottom: 3cqh; }
+
+  /* ---- פריסה: שני שחקנים בקרב — לכל שחקן צד משלו, ג׳ויסטיק למטה וכפתורים מעליו ---- */
+  #touch.p2.s-fight .tpad        { width: 23cqh; height: 23cqh; }
+  #touch.p2.s-fight .tpad .tnub  { width: 10cqh; height: 10cqh; margin: -5cqh 0 0 -5cqh; }
+  #touch.p2.s-fight .tacts       { width: 23cqh; height: 23cqh; }
+  #touch.p2.s-fight .tacts .tbtn { width: 10.5cqh; height: 10.5cqh; font-size: 2.4cqh; }
+  #touch.p2.s-fight .tpad.p1     { left: 2cqh;  bottom: 2cqh; }
+  #touch.p2.s-fight .tacts.p1    { left: 2cqh;  bottom: 27cqh; right: auto; }
+  #touch.p2.s-fight .tpad.p2     { right: 2cqh; bottom: 2cqh; }
+  #touch.p2.s-fight .tacts.p2    { right: 2cqh; bottom: 27cqh; }
+
+  /* ---- כפתורי תפריט ---- */
+  .tmbtn {
+    position: absolute; pointer-events: auto; touch-action: none;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 3cqh; height: 11cqh; min-width: 24cqh;
+    border-radius: 5.5cqh; border: 0.55cqh solid #000;
+    background: rgba(255,222,89,.85); color: #2a2200;
+    font-size: 4cqh; letter-spacing: 1px; direction: rtl;
+  }
+  .tmbtn.on { transform: scale(.94); filter: brightness(1.2); }
+  .tmbtn.back { background: rgba(255,45,85,.85); color: #fff; min-width: 18cqh; font-size: 3.4cqh; height: 9cqh; }
+  .tok  { right: 3cqh; bottom: 3cqh; }
+  .tok2 { right: 3cqh; bottom: 3cqh; }
+  .tback { left: 3cqh; top: 3cqh; }
+  /* בבחירת דמות לשני שחקנים הג׳ויסטיקים תופסים את שתי הפינות התחתונות */
+  #touch.p2 .tok  { left: 3cqh; right: auto; bottom: 34cqh; }
+  #touch.p2 .tok2 { right: 3cqh; bottom: 34cqh; }
+
+  /* ---- כפתורי שירות במרכז התחתון ---- */
+  .tutil { position: absolute; left: 50%; bottom: 2cqh; transform: translateX(-50%);
+           display: flex; gap: 2.5cqh; pointer-events: none; }
+  .tutil .tbtn { position: relative; width: 9cqh; height: 9cqh; font-size: 3.6cqh;
+                 background: rgba(0,0,0,.45); border-color: rgba(255,222,89,.5);
+                 color: #ffde59; opacity: .75; direction: ltr; }
+
+  .thide { display: none !important; }
+
+  /* ---- בקשה לסובב את המכשיר ---- */
+  #rotate { position: fixed; inset: 0; z-index: 50; display: none;
+            background: #12101c; color: #ffde59; text-align: center; padding: 24px;
+            flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  #rotate .rot-icon { font-size: 64px; animation: rotspin 1.8s ease-in-out infinite; }
+  #rotate b { font-family: Impact, sans-serif; font-size: 26px; color: #ff2d55; }
+  @keyframes rotspin { 0%, 40% { transform: rotate(0deg); } 70%, 100% { transform: rotate(90deg); } }
+  @media (orientation: portrait) and (max-width: 620px) {
+    body.touch #rotate { display: flex; }
+  }
 </style>
 </head>
 <body>
 <h1>KWAN vs FARCHI</h1>
 
-<div id="wrap"><canvas id="game" width="960" height="540" dir="ltr"></canvas></div>
+<div id="wrap">
+  <canvas id="game" width="960" height="540" dir="ltr"></canvas>
+  <!-- שכבת השליטה במגע — נבנית ב-JS (ראו "שליטה במגע" בסוף הקובץ) -->
+  <div id="touch"></div>
+</div>
+
+<div id="rotate">
+  <div class="rot-icon">📱</div>
+  <b>סובבו את המכשיר</b>
+  <div>המשחק רץ לרוחב המסך</div>
+</div>
 
 <div class="keys">
   <div>
@@ -1369,6 +1522,9 @@ function update(){
 }
 
 // ---------- מסכים ----------
+// ההוראות על המסך משתנות לפי אופן השליטה — מקלדת או מגע
+const kbt = (kb, tch) => touchMode ? tch : kb;
+
 function drawLoading(){
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
   ctx.textAlign = 'center';
@@ -1438,7 +1594,7 @@ function drawTitle(){
   ctx.textAlign = 'center';
   ctx.font = '900 20px Impact, sans-serif';
   ctx.fillStyle = frame % 40 < 20 ? '#7fffd4' : '#fff';
-  ctx.fillText('W / S לבחירה · ENTER להתחלה', W/2, 430);
+  ctx.fillText(kbt('W / S לבחירה · ENTER להתחלה', 'ג׳ויסטיק לבחירה · אישור להתחלה'), W/2, 430);
   ctx.font = '13px "Comic Sans MS", cursive';
   ctx.fillStyle = '#ffde59';
   ctx.fillText('M = מוזיקה ' + (musicOn ? 'ON' : 'OFF'), W/2, 460);
@@ -1504,8 +1660,8 @@ function drawSelect(){
 
   ctx.textAlign = 'center';
   ctx.font = '900 18px Impact, sans-serif'; ctx.fillStyle = '#fff';
-  const l0 = selLock[0] ? 'P1 מוכן!' : 'P1: A/D לבחירה, F לאישור';
-  const l1 = cpuMode ? '' : (selLock[1] ? 'P2 מוכן!' : 'P2: ←/→ לבחירה, K לאישור');
+  const l0 = selLock[0] ? 'P1 מוכן!' : kbt('P1: A/D לבחירה, F לאישור', 'P1: ג׳ויסטיק לבחירה, אישור לנעילה');
+  const l1 = cpuMode ? '' : (selLock[1] ? 'P2 מוכן!' : kbt('P2: ←/→ לבחירה, K לאישור', 'P2: ג׳ויסטיק לבחירה, אישור לנעילה'));
   ctx.fillText(l0 + (l1 ? '     ·     ' + l1 : ''), W/2, 530);
 }
 
@@ -1548,7 +1704,7 @@ function drawFight(){
       ctx.fillText('"' + winLine + '"', W/2, H/2 + 90);
       if (frame % 40 < 20){
         ctx.font = '900 18px Impact, sans-serif'; ctx.fillStyle = '#7fffd4';
-        ctx.fillText('ENTER להמשך', W/2, H - 60);
+        ctx.fillText(kbt('ENTER להמשך', 'אישור להמשך'), W/2, H - 60);
       }
     }
   }
@@ -1563,13 +1719,14 @@ function drawFight(){
     ctx.strokeText('"' + winLine + '"', W/2, 210); ctx.fillText('"' + winLine + '"', W/2, 210);
     ctx.font = '900 20px Impact, sans-serif';
     ctx.fillStyle = frame % 40 < 20 ? '#fff' : '#ffde59';
-    ctx.strokeText('ENTER לחזרה לתפריט', W/2, H - 60);
-    ctx.fillText('ENTER לחזרה לתפריט', W/2, H - 60);
+    const backTxt = kbt('ENTER לחזרה לתפריט', 'אישור לחזרה לתפריט');
+    ctx.strokeText(backTxt, W/2, H - 60);
+    ctx.fillText(backTxt, W/2, H - 60);
   }
 
   if (state === 'pause'){
     ctx.save(); ctx.globalAlpha = 0.65; ctx.fillStyle = '#000'; ctx.fillRect(0,0,W,H); ctx.restore();
-    bigText('PAUSED', H/2 - 20, 80, '#7fffd4', 'P להמשך · ESC לתפריט');
+    bigText('PAUSED', H/2 - 20, 80, '#7fffd4', kbt('P להמשך · ESC לתפריט', 'אישור להמשך · חזרה לתפריט'));
   }
 }
 
@@ -1580,6 +1737,219 @@ function draw(){
   else if (state === 'select') drawSelect();
   else drawFight();
   drawScanlinesAndJunk();
+}
+
+// ============================================================
+//  שליטה במגע — ג׳ויסטיק וכפתורים וירטואליים
+//  העיקרון: המגע לא נוגע בלוגיקת המשחק בכלל. הוא רק "לוחץ" על אותם
+//  קודי מקשים שהמקלדת לוחצת (keys/pressed), ומשם הכל ממשיך כרגיל —
+//  אותם תפריטים, אותה מכניקה, אותו קלט לשחקן.
+// ============================================================
+const _qp = new URLSearchParams(location.search);
+const touchMode =
+  _qp.get('touch') === '0' ? false :
+  _qp.get('touch') === '1' ? true  :
+  (matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches);
+
+const heldVirtual = new Set();
+function keyDownV(code){ if (!keys[code]) pressed[code] = true; keys[code] = true; heldVirtual.add(code); }
+function keyUpV(code){ keys[code] = false; heldVirtual.delete(code); }
+function keyHoldV(code, on){ if (on) keyDownV(code); else keyUpV(code); }
+
+const TC = {};   // הפניות לאלמנטים של השכבה
+
+function wakeUp(){
+  audioUnlock();
+  if (state === 'load') loadT = 999;
+}
+
+// משחרר כל מה שמוחזק כרגע — בשינוי מסך, ביציאה מהחלון, בסיבוב המכשיר
+function releaseVirtual(){
+  if (!TC.layer) return;
+  TC.layer.querySelectorAll('.tpad, .tbtn, .tmbtn').forEach(n => n.__release && n.__release());
+  heldVirtual.forEach(c => { keys[c] = false; });
+  heldVirtual.clear();
+}
+
+// ---------- כפתור בודד = מקש בודד ----------
+function bindBtn(node, code){
+  let pid = null;
+  const release = () => {
+    pid = null;
+    node.classList.remove('on');
+    if (code) keyUpV(code);
+  };
+  node.__release = release;
+  node.addEventListener('pointerdown', ev => {
+    ev.preventDefault();
+    if (pid !== null) return;              // אצבע אחת לכל כפתור
+    pid = ev.pointerId;
+    try { node.setPointerCapture(pid); } catch(e){}
+    node.classList.add('on');
+    wakeUp();
+    if (code) keyDownV(code); else node.__tap && node.__tap();
+  });
+  const end = ev => { if (ev.pointerId === pid) release(); };
+  node.addEventListener('pointerup', end);
+  node.addEventListener('pointercancel', end);
+  node.addEventListener('lostpointercapture', end);
+}
+
+// ---------- ג׳ויסטיק ----------
+function bindPad(pad, nub, s){
+  let pid = null;
+  const release = () => {
+    pid = null;
+    [s.left, s.right, s.up, s.down].forEach(keyUpV);
+    nub.style.transform = 'translate(0,0)';
+    pad.classList.remove('on');
+  };
+  pad.__release = release;
+  // מרכז הפד = נייטרלי. ככל שהאצבע רחוקה יותר, הכיוון נדלק.
+  const track = ev => {
+    const r = pad.getBoundingClientRect();
+    let dx = (ev.clientX - (r.left + r.width  / 2)) / (r.width  / 2);
+    let dy = (ev.clientY - (r.top  + r.height / 2)) / (r.height / 2);
+    const m = Math.hypot(dx, dy);
+    if (m > 1){ dx /= m; dy /= m; }
+    nub.style.transform = `translate(${dx * 65}%, ${dy * 65}%)`;
+    const jump = dy < -0.42;                       // קפיצה = דחיפה למעלה
+    keyHoldV(s.left,  dx < -0.30);
+    keyHoldV(s.right, dx >  0.30);
+    keyHoldV(s.up,    jump);                       // מופעל פעם אחת לכל דחיפה
+    keyHoldV(s.down,  dy > 0.40 && !jump);         // התכופפות
+  };
+  pad.addEventListener('pointerdown', ev => {
+    ev.preventDefault();
+    if (pid !== null) return;
+    pid = ev.pointerId;
+    try { pad.setPointerCapture(pid); } catch(e){}
+    pad.classList.add('on');
+    wakeUp();
+    track(ev);
+  });
+  pad.addEventListener('pointermove', ev => { if (ev.pointerId === pid) track(ev); });
+  const end = ev => { if (ev.pointerId === pid) release(); };
+  pad.addEventListener('pointerup', end);
+  pad.addEventListener('pointercancel', end);
+  pad.addEventListener('lostpointercapture', end);
+}
+
+const TOUCH_ACTS = [['punch','אגרוף'], ['kick','בעיטה'], ['block','חסימה'], ['special','מיוחד']];
+
+function buildTouchUI(){
+  const layer = TC.layer = document.getElementById('touch');
+  layer.addEventListener('contextmenu', e => e.preventDefault());
+  const mk = (tag, cls, parent, txt) => {
+    const n = document.createElement(tag);
+    n.className = cls;
+    if (txt != null) n.textContent = txt;
+    parent.appendChild(n);
+    return n;
+  };
+
+  const makePad = who => {
+    const pad = mk('div', 'tpad p' + (who + 1), layer);
+    ['n','s','w','e'].forEach((d, i) => mk('div', 'tar ' + d, pad, ['▲','▼','◀','▶'][i]));
+    bindPad(pad, mk('div', 'tnub', pad), SCHEMES[who]);
+    return pad;
+  };
+  const makeActs = who => {
+    const box = mk('div', 'tacts p' + (who + 1), layer);
+    box.btns = {};
+    for (const [act, label] of TOUCH_ACTS){
+      const b = mk('div', `tbtn ${act} a-${act}`, box, label);
+      bindBtn(b, SCHEMES[who][act]);
+      box.btns[act] = b;
+    }
+    return box;
+  };
+  const makeMenuBtn = (cls, label, code) => {
+    const b = mk('div', 'tmbtn ' + cls, layer, label);
+    bindBtn(b, code);
+    return b;
+  };
+  const makeUtil = (cls, label, code, tap) => {
+    const b = mk('div', 'tbtn ' + cls, TC.util, label);
+    bindBtn(b, code);
+    if (tap) b.__tap = tap;
+    return b;
+  };
+
+  TC.pad1  = makePad(0);
+  TC.acts1 = makeActs(0);
+  TC.pad2  = makePad(1);
+  TC.acts2 = makeActs(1);
+  TC.ok    = makeMenuBtn('tok', 'אישור', 'Enter');
+  TC.ok2   = makeMenuBtn('tok2', 'אישור P2', 'KeyK');
+  TC.back  = makeMenuBtn('tback back', 'חזרה', 'Escape');
+
+  TC.util  = mk('div', 'tutil', layer);
+  TC.pause = makeUtil('u-pause', '❚❚', 'KeyP');
+  TC.music = makeUtil('u-music', '♪', 'KeyM');
+  TC.full  = makeUtil('u-full',  '⛶', null, toggleFullscreen);
+}
+
+function toggleFullscreen(){
+  const doc = document, root = doc.documentElement;
+  try {
+    if (!doc.fullscreenElement && !doc.webkitFullscreenElement){
+      const req = root.requestFullscreen || root.webkitRequestFullscreen;
+      const r = req && req.call(root);
+      if (r && r.then) r.then(lockLandscape, () => {}); else lockLandscape();
+    } else {
+      const ex = doc.exitFullscreen || doc.webkitExitFullscreen;
+      if (ex) ex.call(doc);
+    }
+  } catch(e){}
+}
+function lockLandscape(){
+  try { const p = screen.orientation.lock('landscape'); if (p && p.catch) p.catch(() => {}); } catch(e){}
+}
+
+// איזה פקדים מוצגים בכל מסך
+let touchSig = '';
+function syncTouch(){
+  if (!touchMode) return;
+  const two = !cpuMode, sig = state + '|' + two;
+  if (sig !== touchSig){
+    touchSig = sig;
+    releaseVirtual();                       // לא נשאיר מקש תקוע במעבר בין מסכים
+    const fight = state === 'fight', pick = state === 'select';
+    const vis = {
+      pad1:  fight || pick || state === 'title',
+      acts1: fight,
+      pad2:  two && (fight || pick),
+      acts2: two && fight,
+      ok:    pick || ['title','pause','roundend','matchend'].includes(state),
+      ok2:   two && pick,
+      back:  pick || state === 'pause' || state === 'matchend',
+      pause: fight,
+      util:  state !== 'load'
+    };
+    for (const k in vis) TC[k].classList.toggle('thide', !vis[k]);
+    TC.layer.className = ((vis.pad2 || vis.ok2) ? 'p2 ' : '') + 's-' + state;
+  }
+  // כפתור המיוחד נדלק רק כשמד ה-SPECIAL מלא
+  if (p1) TC.acts1.btns.special.classList.toggle('ready', p1.meter >= 100);
+  if (p2) TC.acts2.btns.special.classList.toggle('ready', p2.meter >= 100);
+}
+
+if (touchMode){
+  document.body.classList.add('touch');
+  // ב-iOS גם ה-html עצמו יודע לגלול, לא רק ה-body
+  document.documentElement.style.overflow = 'hidden';
+  document.documentElement.style.overscrollBehavior = 'none';
+  buildTouchUI();
+  syncTouch();
+  // מסך אנכי — עוצרים את הקרב עד שמסובבים בחזרה
+  addEventListener('resize', () => {
+    if (innerHeight > innerWidth && state === 'fight'){ state = 'pause'; releaseVirtual(); }
+  });
+  addEventListener('blur', releaseVirtual);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) releaseVirtual(); });
+  // נגיעה ראשונה בכל מקום — משחררת את הסאונד ומדלגת על מסך הטעינה
+  document.getElementById('wrap').addEventListener('pointerdown', wakeUp);
 }
 
 // ---------- לולאה ראשית עם צעד קבוע ----------
@@ -1595,6 +1965,7 @@ function loop(now){
     acc -= STEP;
   }
   draw();
+  syncTouch();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);

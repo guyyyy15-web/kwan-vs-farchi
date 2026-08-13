@@ -143,21 +143,10 @@
   .tacts .a-punch   { left: 0; bottom: 0; }
   .tacts .a-kick    { right: 0; bottom: 0; }
 
-  /* ---- פריסה: שחקן אחד ---- */
+  /* ---- פריסה ---- */
+  /* במגע יש תמיד שחקן אחד בלבד: ג׳ויסטיק בצד אחד, כפתורים בצד השני */
   .tpad.p1  { left: 3cqh;  bottom: 3cqh; }
   .tacts.p1 { right: 3cqh; bottom: 3cqh; }
-  .tpad.p2  { right: 3cqh; bottom: 3cqh; }
-  .tacts.p2 { right: 3cqh; bottom: 3cqh; }
-
-  /* ---- פריסה: שני שחקנים בקרב — לכל שחקן צד משלו, ג׳ויסטיק למטה וכפתורים מעליו ---- */
-  #touch.p2.s-fight .tpad        { width: 23cqh; height: 23cqh; }
-  #touch.p2.s-fight .tpad .tnub  { width: 10cqh; height: 10cqh; margin: -5cqh 0 0 -5cqh; }
-  #touch.p2.s-fight .tacts       { width: 23cqh; height: 23cqh; }
-  #touch.p2.s-fight .tacts .tbtn { width: 10.5cqh; height: 10.5cqh; font-size: 2.4cqh; }
-  #touch.p2.s-fight .tpad.p1     { left: 2cqh;  bottom: 2cqh; }
-  #touch.p2.s-fight .tacts.p1    { left: 2cqh;  bottom: 27cqh; right: auto; }
-  #touch.p2.s-fight .tpad.p2     { right: 2cqh; bottom: 2cqh; }
-  #touch.p2.s-fight .tacts.p2    { right: 2cqh; bottom: 27cqh; }
 
   /* ---- כפתורי תפריט ---- */
   .tmbtn {
@@ -171,11 +160,7 @@
   .tmbtn.on { transform: scale(.94); filter: brightness(1.2); }
   .tmbtn.back { background: rgba(255,45,85,.85); color: #fff; min-width: 18cqh; font-size: 3.4cqh; height: 9cqh; }
   .tok  { right: 3cqh; bottom: 3cqh; }
-  .tok2 { right: 3cqh; bottom: 3cqh; }
   .tback { left: 3cqh; top: 3cqh; }
-  /* בבחירת דמות לשני שחקנים הג׳ויסטיקים תופסים את שתי הפינות התחתונות */
-  #touch.p2 .tok  { left: 3cqh; right: auto; bottom: 34cqh; }
-  #touch.p2 .tok2 { right: 3cqh; bottom: 34cqh; }
 
   /* ---- כפתורי שירות במרכז התחתון ---- */
   .tutil { position: absolute; left: 50%; bottom: 2cqh; transform: translateX(-50%);
@@ -1427,8 +1412,11 @@ function update(){
       break;
 
     case 'title':
-      if (wasPressed('ArrowUp') || wasPressed('KeyW')) { menuIdx = (menuIdx + 1) % 2; SFX.menu(); }
-      if (wasPressed('ArrowDown') || wasPressed('KeyS')) { menuIdx = (menuIdx + 1) % 2; SFX.menu(); }
+      // במגע יש רק שחקן יחיד — שני שחקנים דורש מקלדת, אז התפריט נעול על האפשרות הראשונה
+      if (!touchMode){
+        if (wasPressed('ArrowUp') || wasPressed('KeyW')) { menuIdx = (menuIdx + 1) % 2; SFX.menu(); }
+        if (wasPressed('ArrowDown') || wasPressed('KeyS')) { menuIdx = (menuIdx + 1) % 2; SFX.menu(); }
+      } else menuIdx = 0;
       if (wasPressed('Enter') || wasPressed('Space')){
         cpuMode = menuIdx === 0;
         state = 'select'; selLock = [false, false]; selIdx = [0, 1];
@@ -1577,12 +1565,19 @@ function drawTitle(){
   opts.forEach((o, i) => {
     const y = 300 + i * 52;
     const sel = i === menuIdx;
+    // במגע אין שני שחקנים — האפשרות מוצגת מעומעמת עם הסבר למה
+    const locked = touchMode && i === 1;
     ctx.textAlign = 'center';
     ctx.font = `900 ${sel ? 30 : 25}px Impact, sans-serif`;
     ctx.lineWidth = 6; ctx.strokeStyle = '#000';
     ctx.strokeText(o, W/2, y);
-    ctx.fillStyle = sel ? (frame % 20 < 10 ? '#ffde59' : '#fff') : '#bbb';
+    ctx.fillStyle = locked ? '#666' : sel ? (frame % 20 < 10 ? '#ffde59' : '#fff') : '#bbb';
     ctx.fillText(o, W/2, y);
+    if (locked){
+      ctx.font = '900 15px Impact, sans-serif';
+      ctx.fillStyle = '#555';
+      ctx.fillText('דרושה מקלדת', W/2, y + 22);
+    }
     if (sel){
       ctx.fillStyle = '#ff2d55';
       ctx.font = '900 28px Impact, sans-serif';
@@ -1594,7 +1589,7 @@ function drawTitle(){
   ctx.textAlign = 'center';
   ctx.font = '900 20px Impact, sans-serif';
   ctx.fillStyle = frame % 40 < 20 ? '#7fffd4' : '#fff';
-  ctx.fillText(kbt('W / S לבחירה · ENTER להתחלה', 'ג׳ויסטיק לבחירה · אישור להתחלה'), W/2, 430);
+  ctx.fillText(kbt('W / S לבחירה · ENTER להתחלה', 'אישור להתחלה'), W/2, 430);
   ctx.font = '13px "Comic Sans MS", cursive';
   ctx.fillStyle = '#ffde59';
   ctx.fillText('M = מוזיקה ' + (musicOn ? 'ON' : 'OFF'), W/2, 460);
@@ -1661,7 +1656,8 @@ function drawSelect(){
   ctx.textAlign = 'center';
   ctx.font = '900 18px Impact, sans-serif'; ctx.fillStyle = '#fff';
   const l0 = selLock[0] ? 'P1 מוכן!' : kbt('P1: A/D לבחירה, F לאישור', 'P1: ג׳ויסטיק לבחירה, אישור לנעילה');
-  const l1 = cpuMode ? '' : (selLock[1] ? 'P2 מוכן!' : kbt('P2: ←/→ לבחירה, K לאישור', 'P2: ג׳ויסטיק לבחירה, אישור לנעילה'));
+  // שני שחקנים קיים רק במקלדת, אז ההוראה של P2 תמיד מדברת על מקשים
+  const l1 = cpuMode ? '' : (selLock[1] ? 'P2 מוכן!' : 'P2: ←/→ לבחירה, K לאישור');
   ctx.fillText(l0 + (l1 ? '     ·     ' + l1 : ''), W/2, 530);
 }
 
@@ -1876,12 +1872,10 @@ function buildTouchUI(){
     return b;
   };
 
+  // רק שחקן אחד — על מסך מגע אין מקום סביר לשני שחקנים
   TC.pad1  = makePad(0);
   TC.acts1 = makeActs(0);
-  TC.pad2  = makePad(1);
-  TC.acts2 = makeActs(1);
   TC.ok    = makeMenuBtn('tok', 'אישור', 'Enter');
-  TC.ok2   = makeMenuBtn('tok2', 'אישור P2', 'KeyK');
   TC.back  = makeMenuBtn('tback back', 'חזרה', 'Escape');
 
   TC.util  = mk('div', 'tutil', layer);
@@ -1911,28 +1905,23 @@ function lockLandscape(){
 let touchSig = '';
 function syncTouch(){
   if (!touchMode) return;
-  const two = !cpuMode, sig = state + '|' + two;
-  if (sig !== touchSig){
-    touchSig = sig;
+  if (state !== touchSig){
+    touchSig = state;
     releaseVirtual();                       // לא נשאיר מקש תקוע במעבר בין מסכים
     const fight = state === 'fight', pick = state === 'select';
     const vis = {
       pad1:  fight || pick || state === 'title',
       acts1: fight,
-      pad2:  two && (fight || pick),
-      acts2: two && fight,
       ok:    pick || ['title','pause','roundend','matchend'].includes(state),
-      ok2:   two && pick,
       back:  pick || state === 'pause' || state === 'matchend',
       pause: fight,
       util:  state !== 'load'
     };
     for (const k in vis) TC[k].classList.toggle('thide', !vis[k]);
-    TC.layer.className = ((vis.pad2 || vis.ok2) ? 'p2 ' : '') + 's-' + state;
+    TC.layer.className = 's-' + state;
   }
   // כפתור המיוחד נדלק רק כשמד ה-SPECIAL מלא
   if (p1) TC.acts1.btns.special.classList.toggle('ready', p1.meter >= 100);
-  if (p2) TC.acts2.btns.special.classList.toggle('ready', p2.meter >= 100);
 }
 
 if (touchMode){
